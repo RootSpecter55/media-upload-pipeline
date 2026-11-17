@@ -1,0 +1,98 @@
+{
+  "family": "media-upload-pipeline-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "${EXECUTION_ROLE_ARN}",
+  "taskRoleArn": "${TASK_ROLE_ARN}",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/media-upload-pipeline:${IMAGE_TAG}",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "APP_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "8000"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "INFO"
+        },
+        {
+          "name": "SECRETS_SOURCE",
+          "value": "aws"
+        },
+        {
+          "name": "SECRET_ID",
+          "value": "${SECRET_ID}"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "${AWS_REGION}"
+        },
+        {
+          "name": "STORAGE_PROVIDER",
+          "value": "s3"
+        },
+        {
+          "name": "S3_BUCKET",
+          "value": "${S3_BUCKET}"
+        },
+        {
+          "name": "PUBLIC_BASE_URL",
+          "value": "${PUBLIC_BASE_URL}"
+        },
+        {
+          "name": "JOB_QUEUE",
+          "value": "sqs"
+        },
+        {
+          "name": "SQS_QUEUE_URL",
+          "value": "${SQS_QUEUE_URL}"
+        },
+        {
+          "name": "MAX_UPLOAD_BYTES",
+          "value": "20000000"
+        },
+        {
+          "name": "MAX_IMAGE_PIXELS",
+          "value": "40000000"
+        },
+        {
+          "name": "DEFAULT_QUOTA_BYTES",
+          "value": "100000000"
+        }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)\" || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 20
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/media-upload-pipeline",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "api"
+        }
+      }
+    }
+  ]
+}
